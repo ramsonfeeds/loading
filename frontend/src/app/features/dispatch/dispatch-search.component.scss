@@ -10,6 +10,8 @@
 .result-list {
   display: grid;
   gap: 6px;
+  height: 280px;
+  overflow-y: auto;
 }
 
 .result {

@@ -23,6 +23,8 @@
     padding-bottom: 3px;
     border-bottom: 1px solid #000;
     font-weight: 700;
+    font-size: 14px;
+    margin-top: 1em;
   }
 }
 
@@ -38,7 +40,9 @@
   gap: 4px;
   min-height: 16px;
   align-items: start;
-  margin-top: 1em;
+  margin-top: 0.8em;
+  font-size: 15px;
+  font-weight: bold;
 }
 
 .product {
