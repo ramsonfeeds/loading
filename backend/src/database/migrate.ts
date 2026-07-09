@@ -1,5 +1,5 @@
-import { getDatabase } from './database.js';
+import { prisma } from './prisma.js';
 
-const database = await getDatabase();
-await database.close();
-console.log('SQLite database initialized');
+await prisma.$connect();
+console.log('Prisma client connected');
+await prisma.$disconnect();

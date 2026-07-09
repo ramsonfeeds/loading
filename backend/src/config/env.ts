@@ -17,7 +17,7 @@ if (envPath) {
 }
 
 const envSchema = z.object({
-  SQLITE_DATABASE_PATH: z.string().min(1).default('./data/dispatch.sqlite'),
+  DATABASE_URL: z.string().min(1),
   PORT: z.coerce.number().int().positive().default(8080),
   CORS_ORIGIN: z.string().default('http://localhost:4200'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development')

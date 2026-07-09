@@ -1,4 +1,4 @@
-import { getDatabase } from './database.js';
+import { prisma } from './prisma.js';
 
 const products = [
   { weight: 49, tamilName: 'வட்ட பசு', englishName: 'Vatta Pasu' },
@@ -84,33 +84,36 @@ const products = [
   { weight: 43, tamilName: 'பருத்தி விதை புண்ணாக்கு', englishName: 'Paruthi' }
 ];
 
-const database = await getDatabase();
+await prisma.$connect();
 
-await database.run('UPDATE products SET active = 0');
+await prisma.product.updateMany({ data: { active: false } });
 
 for (const product of products) {
-  const existing = await database.get<{ id: number }>(
-    'SELECT id FROM products WHERE english_name = ? LIMIT 1',
-    product.englishName
-  );
+  const existing = await prisma.product.findFirst({
+    where: { englishName: product.englishName }
+  });
 
   if (existing) {
-    await database.run(
-      'UPDATE products SET tamil_name = ?, weight = ?, active = 1 WHERE id = ?',
-      product.tamilName,
-      product.weight,
-      existing.id
-    );
+    await prisma.product.update({
+      where: { id: existing.id },
+      data: {
+        tamilName: product.tamilName,
+        weight: product.weight,
+        active: true
+      }
+    });
     continue;
   }
 
-  await database.run(
-    'INSERT INTO products (english_name, tamil_name, weight, active) VALUES (?, ?, ?, 1)',
-    product.englishName,
-    product.tamilName,
-    product.weight
-  );
+  await prisma.product.create({
+    data: {
+      englishName: product.englishName,
+      tamilName: product.tamilName,
+      weight: product.weight,
+      active: true
+    }
+  });
 }
 
-await database.close();
-console.log(`SQLite seed complete: ${products.length} active products`);
+await prisma.$disconnect();
+console.log(`Prisma seed complete: ${products.length} active products`);

@@ -1,15 +1,82 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          Int     @id @default(autoincrement())
+  englishName String  @map("english_name") @db.VarChar(191)
+  tamilName   String  @map("tamil_name") @db.VarChar(191)
+  weight      Float
+  active      Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  dispatchItems DispatchItem[]
+
+  @@index([englishName, tamilName])
+  @@index([active])
+  @@map("products")
+}
+
+model Dispatch {
+  id Int @id @default(autoincrement())
+
+  dispatchDate String @map("dispatch_date")
+  title        String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  groups DispatchGroup[]
+
+  @@index([dispatchDate])
+  @@map("dispatches")
+}
+
+model DispatchGroup {
+  id Int @id @default(autoincrement())
+
+  dispatchId Int @map("dispatch_id")
+  sortOrder  Int @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  dispatch Dispatch @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
+
+  items DispatchItem[]
+
+  @@index([dispatchId, sortOrder])
+  @@map("dispatch_groups")
+}
+
+model DispatchItem {
+  id Int @id @default(autoincrement())
+
+  groupId Int @map("group_id")
+
+  productId Int @map("product_id")
+
+  quantity Int
+
+  description String?
+
+  sortOrder Int @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  group   DispatchGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([groupId, sortOrder])
+  @@index([productId])
+  @@map("dispatch_items")
 }

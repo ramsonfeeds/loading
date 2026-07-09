@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import type { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
 import { env } from '../config/env.js';
@@ -14,8 +15,8 @@ export const errorMiddleware: ErrorRequestHandler = (error, _request, response, 
     return;
   }
 
-  if (error instanceof Error && 'code' in error && typeof error.code === 'string' && error.code.startsWith('SQLITE_')) {
-    response.status(400).json({ message: 'Database request failed', code: error.code });
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+    response.status(404).json({ message: 'Resource not found' });
     return;
   }
 
