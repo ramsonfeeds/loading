@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "dist/server.js",
+  "main": "dist/src/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "start:migrate": "node dist/src/database/migrate.js && node dist/src/server.js",
     "db:init": "tsx src/database/migrate.ts",
     "db:seed": "tsx src/database/seed.ts",
