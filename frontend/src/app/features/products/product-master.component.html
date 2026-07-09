@@ -1,0 +1,62 @@
+<main class="product-page">
+  <header>
+    <div>
+      <h1>Products</h1>
+      <span>Product master</span>
+    </div>
+    <a mat-flat-button routerLink="/"><mat-icon>assignment</mat-icon>Dispatch</a>
+  </header>
+
+  <section class="content">
+    <form [formGroup]="form" class="editor" (ngSubmit)="save()">
+      <mat-form-field appearance="outline">
+        <mat-label>English Name</mat-label>
+        <input matInput formControlName="englishName">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Tamil Name</mat-label>
+        <input matInput formControlName="tamilName">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Weight</mat-label>
+        <input matInput type="number" min="0.01" step="0.01" formControlName="weight">
+      </mat-form-field>
+      <mat-checkbox formControlName="active">Active</mat-checkbox>
+      <div class="actions">
+        <button mat-flat-button color="primary" type="submit"><mat-icon>save</mat-icon>{{ editing() ? 'Update' : 'Add' }}</button>
+        <button mat-button type="button" (click)="cancel()">Cancel</button>
+      </div>
+    </form>
+
+    <section class="list">
+      <mat-form-field appearance="outline">
+        <mat-label>Search</mat-label>
+        <input matInput [formControl]="search">
+      </mat-form-field>
+
+      <table>
+        <thead>
+          <tr>
+            <th>English</th>
+            <th>Tamil</th>
+            <th>Weight</th>
+            <th>Active</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of products$ | async">
+            <td>{{ product.englishName }}</td>
+            <td>{{ product.tamilName }}</td>
+            <td>{{ product.weight }}</td>
+            <td>{{ product.active ? 'Yes' : 'No' }}</td>
+            <td>
+              <button mat-icon-button type="button" title="Edit" (click)="edit(product)"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button type="button" title="Delete" (click)="delete(product)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </section>
+</main>

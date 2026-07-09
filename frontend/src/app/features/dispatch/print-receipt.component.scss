@@ -1,0 +1,106 @@
+:host {
+  display: block;
+}
+
+.receipt {
+  width: 10.5cm;
+  min-height: 1cm;
+  max-height: 30cm;
+  padding: 0.22cm 0.28cm;
+  background: #fff;
+  color: #000;
+  border: 1px solid #bbb;
+  font-family: "Noto Sans Tamil", Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.16;
+  transform-origin: top left;
+  transform: scale(var(--print-scale, 1));
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #000;
+    font-weight: 700;
+  }
+}
+
+.print-group {
+  padding: 3px 0;
+  border-bottom: 1px solid #000;
+  margin-top: 1em;
+}
+
+.print-row {
+  display: grid;
+  grid-template-columns: 1fr 32px 38px;
+  gap: 4px;
+  min-height: 16px;
+  align-items: start;
+  margin-top: 1em;
+}
+
+.product {
+    margin-left: 7em;
+    display: grid;
+    gap: 1px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+small {
+  padding-left: 12px;
+  font-size: 10px;
+}
+
+.qty,
+.group-total {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+footer {
+  padding-top: 4px;
+  font-weight: 700;
+}
+
+.weights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  font-weight: 500;
+}
+
+.totals {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+@page {
+  size: 10.5cm 30cm;
+  margin: 0;
+}
+
+@media screen {
+  .receipt {
+    position: sticky;
+    top: 14px;
+  }
+}
+
+@media print {
+  :host {
+    display: block;
+    width: 10.5cm;
+    height: 30cm;
+    overflow: hidden;
+  }
+
+  .receipt {
+    border: 0;
+    max-height: none;
+  }
+}

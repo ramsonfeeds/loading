@@ -1,0 +1,24 @@
+<section class="search-panel">
+  <h2>Saved</h2>
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline">
+      <mat-label>Date</mat-label>
+      <input matInput [matDatepicker]="savedDatePicker" formControlName="date">
+      <mat-datepicker-toggle matIconSuffix [for]="savedDatePicker" />
+      <mat-datepicker #savedDatePicker />
+    </mat-form-field>
+  </form>
+
+  <div class="result-list">
+    <article *ngFor="let dispatch of dispatches$ | async" class="result">
+      <button type="button" class="result-main" (click)="selected.emit(dispatch)">
+        <strong>{{ dispatch.title || 'Untitled' }}</strong>
+        <span>{{ displayDate(dispatch.dispatchDate) }}</span>
+      </button>
+      <div>
+        <button mat-icon-button type="button" title="Duplicate" (click)="duplicated.emit(dispatch)"><mat-icon>content_copy</mat-icon></button>
+        <button mat-icon-button type="button" title="Delete" (click)="deleted.emit(dispatch)"><mat-icon>delete</mat-icon></button>
+      </div>
+    </article>
+  </div>
+</section>

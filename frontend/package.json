@@ -1,0 +1,32 @@
+{
+  "name": "dispatch-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npx -p node@22.12.0 node ./node_modules/@angular/cli/bin/ng serve --host 0.0.0.0",
+    "build": "npx -p node@22.12.0 node ./node_modules/@angular/cli/bin/ng build",
+    "lint": "ng lint"
+  },
+  "dependencies": {
+    "@angular/animations": "20.3.25",
+    "@angular/cdk": "20.2.14",
+    "@angular/common": "20.3.25",
+    "@angular/compiler": "20.3.25",
+    "@angular/core": "20.3.25",
+    "@angular/forms": "20.3.25",
+    "@angular/material": "20.2.14",
+    "@angular/platform-browser": "20.3.25",
+    "@angular/router": "20.3.25",
+    "cattle-feed-dispatch-system": "file:..",
+    "rxjs": "^7.8.2",
+    "tslib": "^2.8.1",
+    "zone.js": "^0.15.1"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "20.3.31",
+    "@angular/cli": "20.3.31",
+    "@angular/compiler-cli": "20.3.25",
+    "@types/node": "^22.13.14",
+    "typescript": "^5.8.3"
+  }
+}

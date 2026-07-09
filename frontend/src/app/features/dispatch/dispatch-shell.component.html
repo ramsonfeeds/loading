@@ -1,0 +1,127 @@
+<main class="dispatch-page">
+  <header class="toolbar no-print">
+    <div>
+      <h1>Dispatch</h1>
+      <span>{{ statusText() }}</span>
+    </div>
+    <nav>
+      <a mat-button routerLink="/products"><mat-icon>inventory_2</mat-icon>Products</a>
+      <button mat-button type="button" (click)="newDispatch()"><mat-icon>add</mat-icon>New</button>
+      <button mat-flat-button color="primary" type="button" (click)="saveNow()"><mat-icon>save</mat-icon>Save</button>
+      <button mat-flat-button type="button" (click)="print()"><mat-icon>print</mat-icon>Print</button>
+    </nav>
+  </header>
+
+  <mat-progress-bar *ngIf="saving()" mode="indeterminate" class="no-print" />
+
+  <section class="workspace">
+    <aside class="no-print">
+      <app-dispatch-search
+        (selected)="loadDispatch($event)"
+        (duplicated)="duplicate($event)"
+        (deleted)="delete($event)"
+      />
+    </aside>
+
+    <form class="sheet no-print" [formGroup]="form">
+      <div class="header-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Date</mat-label>
+          <input matInput [matDatepicker]="dispatchDatePicker" formControlName="dispatchDate">
+          <mat-datepicker-toggle matIconSuffix [for]="dispatchDatePicker" />
+          <mat-datepicker #dispatchDatePicker />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Title</mat-label>
+          <input matInput formControlName="title">
+        </mat-form-field>
+      </div>
+
+      <div
+        cdkDropList
+        [cdkDropListData]="groups.controls"
+        (cdkDropListDropped)="dropGroup($event)"
+        formArrayName="groups"
+        class="groups"
+      >
+        <section
+          *ngFor="let group of groups.controls; let groupIndex = index"
+          cdkDrag
+          class="dispatch-group"
+          [formGroupName]="groupIndex"
+        >
+          <div class="group-tools">
+            <button mat-icon-button type="button" cdkDragHandle title="Drag group"><mat-icon>drag_indicator</mat-icon></button>
+            <button mat-icon-button type="button" title="Move up" (click)="moveGroup(groupIndex, -1)"><mat-icon>keyboard_arrow_up</mat-icon></button>
+            <button mat-icon-button type="button" title="Move down" (click)="moveGroup(groupIndex, 1)"><mat-icon>keyboard_arrow_down</mat-icon></button>
+          </div>
+
+          <div formArrayName="items" class="items">
+            <div
+              *ngFor="let item of group.controls.items.controls; let itemIndex = index"
+              class="item-row"
+              [formGroupName]="itemIndex"
+            >
+              <mat-form-field appearance="outline" class="product-field">
+                <mat-label>Product</mat-label>
+                <input
+                  #productInput
+                  matInput
+                  formControlName="productSearch"
+                  [matAutocomplete]="productAuto"
+                  (input)="productInputChanged(productInput.value)"
+                  (keydown.enter)="productEnter($event, groupIndex, itemIndex)"
+                  (keydown.shift.enter)="shiftPrevious(groupIndex, itemIndex)"
+                >
+                <mat-autocomplete #productAuto="matAutocomplete" (optionSelected)="selectProduct($event, groupIndex, itemIndex)">
+                  <mat-option *ngFor="let product of filteredProducts$ | async" [value]="product">
+                    <span class="option-name">{{ product.englishName }}</span>
+                    <span>{{ product.tamilName }}</span>
+                  </mat-option>
+                </mat-autocomplete>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="quantity-field">
+                <mat-label>Qty</mat-label>
+                <input
+                  #quantityInput
+                  matInput
+                  type="number"
+                  min="1"
+                  formControlName="quantity"
+                  (keydown.enter)="quantityEnter($any($event), groupIndex, itemIndex)"
+                  (keydown.shift.enter)="focusProduct(groupIndex, itemIndex)"
+                >
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="description-field">
+                <mat-label>Description</mat-label>
+                <input matInput formControlName="description">
+              </mat-form-field>
+
+              <button mat-icon-button type="button" title="Remove" (click)="removeItem(groupIndex, itemIndex)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="group-total">Group Total {{ groupTotalAt(groupIndex) }}</div>
+        </section>
+      </div>
+
+      <footer class="sheet-footer">
+        <button mat-button type="button" (click)="addGroup()"><mat-icon>add</mat-icon>Group</button>
+        <strong>Total Bags {{ grandTotal() }}</strong>
+      </footer>
+    </form>
+
+    <app-print-receipt
+      *ngIf="products$ | async as products"
+      [date]="form.controls.dispatchDate.value"
+      [title]="form.controls.title.value"
+      [groups]="displayDispatchGroups(products)"
+      [weightLines]="weightSummary(products).lines"
+      [totalWeight]="weightSummary(products).total"
+    />
+  </section>
+</main>
