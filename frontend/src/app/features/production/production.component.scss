@@ -1,0 +1,170 @@
+.production-page {
+  min-height: 100vh;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid #d7dbe0;
+
+  h1 {
+    margin: 0;
+    font-size: 22px;
+  }
+
+  span {
+    color: #5f6670;
+    font-size: 13px;
+  }
+
+  nav {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 300px minmax(520px, 1fr);
+  gap: 14px;
+  padding: 14px;
+  align-items: start;
+}
+
+.list-panel,
+.editor {
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #d7dbe0;
+  border-radius: 6px;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+}
+
+.list-item {
+  display: grid;
+  gap: 3px;
+  padding: 9px;
+  border: 1px solid #d7dbe0;
+  border-radius: 6px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+
+  &.active {
+    border-color: #0f6b45;
+    background: #e8f5ee;
+  }
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: 180px 120px 1fr;
+  gap: 10px;
+}
+
+.items {
+  display: grid;
+  gap: 8px;
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 100px 40px;
+  gap: 8px;
+  align-items: start;
+}
+
+footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+}
+
+footer span {
+  flex: 1;
+}
+
+.print-production {
+  display: none;
+}
+
+.production-sheet {
+  width: 10.5cm;
+  min-height: 10cm;
+  padding: 0.4cm;
+  background: #fff;
+  color: #000;
+  font-family: "Noto Sans Tamil", Arial, sans-serif;
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #000;
+    padding-bottom: 4px;
+    font-size: 15px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  td {
+    padding: 5px 0;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  td:last-child {
+    width: 56px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  footer {
+    margin-top: 10px;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace,
+  .editor-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  @page {
+    size: 10.5cm 30cm;
+    margin: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-production {
+    display: block;
+  }
+
+  .production-sheet {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .production-sheet + .production-sheet {
+    margin-top: 1cm;
+  }
+}

@@ -6,22 +6,22 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
-import { BehaviorSubject, debounceTime, startWith, switchMap } from 'rxjs';
-import { Product, ProductPayload } from '../../core/models';
+import { debounceTime, startWith, switchMap } from 'rxjs';
+import { Product, ProductPayload, ProductType } from '../../core/models';
 import { ProductService } from '../../core/product.service';
 
 @Component({
   selector: 'app-product-master',
   standalone: true,
-  imports: [AsyncPipe, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatIconModule, MatInputModule, NgFor, ReactiveFormsModule, RouterLink],
+  imports: [AsyncPipe, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSelectModule, NgFor, ReactiveFormsModule, RouterLink],
   templateUrl: './product-master.component.html',
   styleUrl: './product-master.component.scss'
 })
 export class ProductMasterComponent {
   private readonly fb = inject(FormBuilder);
   private readonly productService = inject(ProductService);
-  private readonly refresh$ = new BehaviorSubject<void>(undefined);
 
   readonly editing = signal<Product | null>(null);
   readonly search = this.fb.nonNullable.control('');
@@ -29,13 +29,13 @@ export class ProductMasterComponent {
     englishName: ['', Validators.required],
     tamilName: ['', Validators.required],
     weight: [49, [Validators.required, Validators.min(0.01)]],
-    active: true
+    active: true,
+    productType: this.fb.nonNullable.control<ProductType>('MANUFACTURED')
   });
 
   readonly products$ = this.search.valueChanges.pipe(
     startWith(''),
     debounceTime(150),
-    switchMap(() => this.refresh$),
     switchMap(() => this.productService.list(this.search.value, 'all'))
   );
 
@@ -45,7 +45,8 @@ export class ProductMasterComponent {
       englishName: product.englishName,
       tamilName: product.tamilName,
       weight: Number(product.weight),
-      active: product.active
+      active: product.active,
+      productType: product.productType
     });
   }
 
@@ -58,16 +59,15 @@ export class ProductMasterComponent {
     const request = editing ? this.productService.update(editing.id, payload) : this.productService.create(payload);
     request.subscribe(() => {
       this.cancel();
-      this.refresh$.next();
     });
   }
 
   delete(product: Product): void {
-    this.productService.delete(product.id).subscribe(() => this.refresh$.next());
+    this.productService.delete(product.id).subscribe();
   }
 
   cancel(): void {
     this.editing.set(null);
-    this.form.reset({ englishName: '', tamilName: '', weight: 49, active: true });
+    this.form.reset({ englishName: '', tamilName: '', weight: 49, active: true, productType: 'MANUFACTURED' });
   }
 }

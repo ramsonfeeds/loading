@@ -34,9 +34,15 @@
   margin-top: 1em;
 }
 
+.factory-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-align: right;
+}
+
 .print-row {
   display: grid;
-  grid-template-columns: 1fr 32px 38px;
+  grid-template-columns: 1fr 90px 40px;
   gap: 4px;
   min-height: 16px;
   align-items: start;
@@ -46,7 +52,7 @@
 }
 
 .product {
-    margin-left: 7em;
+    margin-left: 4em;
     display: grid;
     gap: 1px;
     word-break: break-word;
@@ -55,13 +61,51 @@
 
 small {
   padding-left: 12px;
-  font-size: 10px;
+  font-size: 14px;
 }
 
 .qty,
 .group-total {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.allocation-qty {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+}
+
+.production-allocation {
+  display: inline-flex;
+  gap: 2px;
+  align-items: baseline;
+}
+
+.stock-allocation {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.circled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 3px;
+  border: 1px solid #000;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+.split {
+  display: grid;
+  gap: 0;
+  line-height: 1;
+  text-align: left;
 }
 
 footer {

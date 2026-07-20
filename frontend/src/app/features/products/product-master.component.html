@@ -21,6 +21,13 @@
         <mat-label>Weight</mat-label>
         <input matInput type="number" min="0.01" step="0.01" formControlName="weight">
       </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Product Type</mat-label>
+        <mat-select formControlName="productType">
+          <mat-option value="MANUFACTURED">Manufactured</mat-option>
+          <mat-option value="PURCHASED">Purchased</mat-option>
+        </mat-select>
+      </mat-form-field>
       <mat-checkbox formControlName="active">Active</mat-checkbox>
       <div class="actions">
         <button mat-flat-button color="primary" type="submit"><mat-icon>save</mat-icon>{{ editing() ? 'Update' : 'Add' }}</button>
@@ -40,6 +47,7 @@
             <th>English</th>
             <th>Tamil</th>
             <th>Weight</th>
+            <th>Type</th>
             <th>Active</th>
             <th></th>
           </tr>
@@ -49,6 +57,7 @@
             <td>{{ product.englishName }}</td>
             <td>{{ product.tamilName }}</td>
             <td>{{ product.weight }}</td>
+            <td>{{ product.productType === 'PURCHASED' ? 'Purchased' : 'Manufactured' }}</td>
             <td>{{ product.active ? 'Yes' : 'No' }}</td>
             <td>
               <button mat-icon-button type="button" title="Edit" (click)="edit(product)"><mat-icon>edit</mat-icon></button>

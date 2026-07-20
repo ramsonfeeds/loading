@@ -31,13 +31,19 @@ export class DispatchService {
     return this.repository.create({
       dispatchDate: source.dispatchDate.slice(0, 10),
       title: `${source.title} Copy`,
+      factory: source.factory,
       groups: source.groups.map(group => ({
         sortOrder: group.sortOrder,
         items: group.items.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
           description: item.description,
-          sortOrder: item.sortOrder
+          sortOrder: item.sortOrder,
+          allocations: item.allocations.map(allocation => ({
+            factory: allocation.factory,
+            source: allocation.source,
+            quantity: allocation.quantity
+          }))
         }))
       }))
     });

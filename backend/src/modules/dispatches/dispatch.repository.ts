@@ -43,7 +43,10 @@ export class DispatchRepository {
           include: {
             items: {
               orderBy: { sortOrder: 'asc' },
-              include: { product: true }
+              include: {
+                product: true,
+                allocations: { orderBy: [{ source: 'asc' }, { factory: 'asc' }] }
+              }
             }
           }
         }
@@ -62,7 +65,10 @@ export class DispatchRepository {
           include: {
             items: {
               orderBy: { sortOrder: 'asc' },
-              include: { product: true }
+              include: {
+                product: true,
+                allocations: { orderBy: [{ source: 'asc' }, { factory: 'asc' }] }
+              }
             }
           }
         }
@@ -73,70 +79,108 @@ export class DispatchRepository {
   }
 
   async create(data: DispatchSaveInput): Promise<DispatchRow> {
-    return prisma.$transaction(async transaction => {
-      const dispatch = await transaction.dispatch.create({
-        data: {
-          dispatchDate: data.dispatchDate,
-          title: data.title
-        }
-      });
+    const dispatchId = await prisma.$transaction(
+      async transaction => {
+        const dispatch = await transaction.dispatch.create({
+          data: {
+            dispatchDate: data.dispatchDate,
+            title: data.title,
+            factory: data.factory
+          }
+        });
 
-      await this.insertGroups(transaction, dispatch.id, data.groups);
+        await this.insertGroups(transaction, dispatch.id, data.groups);
 
-      const persistedDispatch = await transaction.dispatch.findUniqueOrThrow({
-        where: { id: dispatch.id },
-        include: {
-          groups: {
-            orderBy: { sortOrder: 'asc' },
-            include: {
-              items: {
-                orderBy: { sortOrder: 'asc' },
-                include: { product: true }
+        return dispatch.id;
+      },
+      {
+        timeout: 30000
+      }
+    );
+
+    const persistedDispatch = await prisma.dispatch.findUniqueOrThrow({
+      where: { id: dispatchId },
+      include: {
+        groups: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            items: {
+              orderBy: { sortOrder: 'asc' },
+              include: {
+                product: true,
+                allocations: {
+                  orderBy: [
+                    { source: 'asc' },
+                    { factory: 'asc' }
+                  ]
+                }
               }
             }
           }
         }
-      });
-
-      return mapDispatch(persistedDispatch);
+      }
     });
+
+    return mapDispatch(persistedDispatch);
   }
 
   async update(id: number, data: DispatchSaveInput): Promise<DispatchRow> {
-    return prisma.$transaction(async transaction => {
-      await transaction.dispatch.update({
-        where: { id },
-        data: {
-          dispatchDate: data.dispatchDate,
-          title: data.title
-        }
-      });
+    await prisma.$transaction(
+      async transaction => {
+        await transaction.dispatch.update({
+          where: { id },
+          data: {
+            dispatchDate: data.dispatchDate,
+            title: data.title,
+            factory: data.factory
+          }
+        });
 
-      await transaction.dispatchItem.deleteMany({
-        where: { group: { dispatchId: id } }
-      });
-      await transaction.dispatchGroup.deleteMany({
-        where: { dispatchId: id }
-      });
-      await this.insertGroups(transaction, id, data.groups);
+        await transaction.dispatchItem.deleteMany({
+          where: {
+            group: {
+              dispatchId: id
+            }
+          }
+        });
 
-      const persistedDispatch = await transaction.dispatch.findUniqueOrThrow({
-        where: { id },
-        include: {
-          groups: {
-            orderBy: { sortOrder: 'asc' },
-            include: {
-              items: {
-                orderBy: { sortOrder: 'asc' },
-                include: { product: true }
+        await transaction.dispatchGroup.deleteMany({
+          where: {
+            dispatchId: id
+          }
+        });
+
+        await this.insertGroups(transaction, id, data.groups);
+      },
+      {
+        timeout: 30000
+      }
+    );
+
+    const persistedDispatch = await prisma.dispatch.findUniqueOrThrow({
+      where: { id },
+      include: {
+        groups: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            items: {
+              orderBy: { sortOrder: 'asc' },
+              include: {
+                product: true,
+                allocations: {
+                  orderBy: [
+                    { source: 'asc' },
+                    { factory: 'asc' }
+                  ]
+                }
               }
             }
           }
         }
-      });
-
-      return mapDispatch(persistedDispatch);
+      }
     });
+
+    return mapDispatch(persistedDispatch);
   }
 
   async delete(id: number): Promise<void> {
@@ -156,16 +200,27 @@ export class DispatchRepository {
         }
       });
 
-      if (group.items.length > 0) {
-        await transaction.dispatchItem.createMany({
-          data: group.items.map(item => ({
+      for (const item of group.items) {
+        const createdItem = await transaction.dispatchItem.create({
+          data: {
             groupId: createdGroup.id,
             productId: item.productId,
             quantity: item.quantity,
             description: item.description ?? null,
             sortOrder: item.sortOrder
-          }))
+          }
         });
+
+        if (item.allocations.length > 0) {
+          await transaction.dispatchAllocation.createMany({
+            data: item.allocations.map(allocation => ({
+              itemId: createdItem.id,
+              factory: allocation.factory,
+              source: allocation.source,
+              quantity: allocation.quantity
+            }))
+          });
+        }
       }
     }
   }

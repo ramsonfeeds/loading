@@ -1,0 +1,110 @@
+<main class="production-page">
+  <header class="toolbar no-print">
+    <div>
+      <h1>Production</h1>
+      <span>Factory production lists</span>
+    </div>
+    <nav>
+      <a mat-button routerLink="/"><mat-icon>assignment</mat-icon>Dispatch</a>
+      <button mat-flat-button type="button" (click)="print()"><mat-icon>print</mat-icon>Print</button>
+    </nav>
+  </header>
+
+  <section class="workspace no-print" *ngIf="products$ | async as products">
+    <aside class="list-panel">
+      <mat-form-field appearance="outline">
+        <mat-label>Date</mat-label>
+        <input matInput [matDatepicker]="productionDatePicker" [formControl]="selectedDate">
+        <mat-datepicker-toggle matIconSuffix [for]="productionDatePicker" />
+        <mat-datepicker #productionDatePicker />
+      </mat-form-field>
+
+      <div class="list" *ngIf="lists$ | async as lists">
+        <button
+          *ngFor="let list of lists"
+          class="list-item"
+          type="button"
+          [class.active]="editing()?.id === list.id"
+          (click)="edit(list)"
+        >
+          <strong>Factory {{ list.factory }}</strong>
+          <span>{{ list.title }}</span>
+          <small>{{ list.items.length }} items &middot; {{ listTotal(list) }} bags</small>
+        </button>
+      </div>
+    </aside>
+
+    <form class="editor" [formGroup]="form" (ngSubmit)="save()">
+      <div class="editor-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Date</mat-label>
+          <input matInput [matDatepicker]="editorDatePicker" formControlName="productionDate">
+          <mat-datepicker-toggle matIconSuffix [for]="editorDatePicker" />
+          <mat-datepicker #editorDatePicker />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Factory</mat-label>
+          <mat-select formControlName="factory">
+            <mat-option value="R">R</mat-option>
+            <mat-option value="S">S</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Title</mat-label>
+          <input matInput formControlName="title">
+        </mat-form-field>
+      </div>
+
+      <div formArrayName="items" class="items">
+        <div *ngFor="let item of items.controls; let itemIndex = index" class="item-row" [formGroupName]="itemIndex">
+          <mat-form-field appearance="outline">
+            <mat-label>Product</mat-label>
+            <mat-select formControlName="productId">
+              <mat-option *ngFor="let product of products" [value]="product.id">
+                {{ product.englishName }} &middot; {{ product.tamilName }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Qty</mat-label>
+            <input matInput type="number" min="1" formControlName="quantity">
+          </mat-form-field>
+
+          <button mat-icon-button type="button" title="Remove" (click)="removeItem(itemIndex)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <footer>
+        <button mat-button type="button" (click)="addItem()"><mat-icon>add</mat-icon>Item</button>
+        <span></span>
+        <button mat-button type="button" (click)="cancel()">New Manual</button>
+        <button mat-flat-button color="primary" type="submit"><mat-icon>save</mat-icon>{{ editing() ? 'Update' : 'Save' }}</button>
+      </footer>
+    </form>
+  </section>
+
+  <section class="print-production" *ngIf="(lists$ | async) as lists">
+    <article *ngFor="let list of lists" class="production-sheet">
+      <header>
+        <strong>Factory {{ list.factory }} Production</strong>
+        <span>{{ displayDate(list.productionDate) }}</span>
+      </header>
+
+      <table>
+        <tbody>
+          <tr *ngFor="let item of list.items">
+            <td>{{ item.product.tamilName }}</td>
+            <td>{{ item.quantity }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <footer>Total Bags {{ listTotal(list) }}</footer>
+    </article>
+  </section>
+</main>

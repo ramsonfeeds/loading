@@ -10,6 +10,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/products/product-master.component').then(component => component.ProductMasterComponent)
   },
   {
+    path: 'production',
+    loadComponent: () => import('./features/production/production.component').then(component => component.ProductionComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }

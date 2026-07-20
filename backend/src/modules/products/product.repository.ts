@@ -34,7 +34,8 @@ export class ProductRepository {
         englishName: data.englishName,
         tamilName: data.tamilName,
         weight: data.weight,
-        active: data.active
+        active: data.active,
+        productType: data.productType
       }
     });
 
@@ -48,7 +49,8 @@ export class ProductRepository {
         ...(data.englishName !== undefined ? { englishName: data.englishName } : {}),
         ...(data.tamilName !== undefined ? { tamilName: data.tamilName } : {}),
         ...(data.weight !== undefined ? { weight: data.weight } : {}),
-        ...(data.active !== undefined ? { active: data.active } : {})
+        ...(data.active !== undefined ? { active: data.active } : {}),
+        ...(data.productType !== undefined ? { productType: data.productType } : {})
       }
     });
 

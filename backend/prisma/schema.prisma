@@ -7,20 +7,43 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ProductType {
+  MANUFACTURED
+  PURCHASED
+}
+
+enum Factory {
+  R
+  S
+}
+
+enum AllocationSource {
+  STOCK
+  PRODUCTION
+}
+
+enum ProductionItemSource {
+  AUTO
+  MANUAL
+}
+
 model Product {
   id          Int     @id @default(autoincrement())
   englishName String  @map("english_name") @db.VarChar(191)
   tamilName   String  @map("tamil_name") @db.VarChar(191)
   weight      Float
   active      Boolean @default(true)
+  productType ProductType @default(MANUFACTURED) @map("product_type")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   dispatchItems DispatchItem[]
+  productionItems ProductionItem[]
 
   @@index([englishName, tamilName])
   @@index([active])
+  @@index([productType])
   @@map("products")
 }
 
@@ -29,13 +52,16 @@ model Dispatch {
 
   dispatchDate String @map("dispatch_date")
   title        String
+  factory Factory
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   groups DispatchGroup[]
+  productionLists ProductionList[]
 
   @@index([dispatchDate])
+  @@index([factory])
   @@map("dispatches")
 }
 
@@ -75,8 +101,68 @@ model DispatchItem {
 
   group   DispatchGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   product Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  allocations DispatchAllocation[]
 
   @@index([groupId, sortOrder])
   @@index([productId])
   @@map("dispatch_items")
+}
+
+model DispatchAllocation {
+  id Int @id @default(autoincrement())
+
+  itemId Int @map("item_id")
+  factory Factory
+  source AllocationSource
+  quantity Int
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  item DispatchItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@index([factory, source])
+  @@map("dispatch_allocations")
+}
+
+model ProductionList {
+  id Int @id @default(autoincrement())
+
+  productionDate String @map("production_date")
+  title String
+  factory Factory
+  sourceDispatchId Int? @map("source_dispatch_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sourceDispatch Dispatch? @relation(fields: [sourceDispatchId], references: [id], onDelete: SetNull)
+  items ProductionItem[]
+
+  @@index([productionDate])
+  @@index([factory])
+  @@index([sourceDispatchId])
+  @@map("production_lists")
+}
+
+model ProductionItem {
+  id Int @id @default(autoincrement())
+
+  productionListId Int @map("production_list_id")
+  productId Int @map("product_id")
+  quantity Int
+  sortOrder Int @map("sort_order")
+  sourceType ProductionItemSource @default(MANUAL) @map("source_type")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  productionList ProductionList @relation(fields: [productionListId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([productionListId, sortOrder])
+  @@index([productId])
+  @@index([sourceType])
+  @@map("production_items")
 }

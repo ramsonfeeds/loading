@@ -1,4 +1,7 @@
-<section #page class="receipt">
+<section
+  *ngFor="let copy of [1,2]"
+  #page
+  class="receipt">
   <header>
     <div>{{ displayDate() }}</div>
     <span style="margin-right: 9em;"><strong>{{ title }}</strong></span>
@@ -10,7 +13,19 @@
         <span>{{ item.product.tamilName }}</span>
         <small *ngIf="item.description">{{ item.description }}</small>
       </div>
-      <span class="qty">{{ item.quantity }}</span>
+      <div class="qty" *ngIf="!hasAllocations(item)">{{ item.quantity }}</div>
+      <div class="qty allocation-qty" *ngIf="hasAllocations(item)">
+        <span *ngFor="let allocation of productionAllocations(item)" class="production-allocation">
+          <small *ngIf="showFactory(factory, allocation.factory)">{{ allocation.factory }}</small>{{ allocation.quantity }}
+        </span>
+        <span *ngIf="stockAllocations(item).length > 0" class="stock-allocation">
+          <small *ngIf="stockAllocations(item).length === 1">{{ stockAllocations(item)[0].factory }}</small>
+          <span class="split" *ngIf="stockAllocations(item).length > 1">
+            <small *ngFor="let allocation of stockAllocations(item)">{{ allocation.factory }}-{{ allocation.quantity }}</small>
+          </span>
+          <span class="circled">{{ allocationTotal(item, 'STOCK') }}</span>
+        </span>
+      </div>
       <strong class="group-total" *ngIf="isLastItem(group, itemIndex)">{{ groupTotal(group) }}</strong>
     </div>
   </div>
@@ -18,10 +33,11 @@
   <footer>
     <div class="weights">
       <span *ngFor="let line of weightLines">{{ line.weight | number:'1.0-2' }}&times;{{ line.bags }}</span>
-      <span style="margin-left: auto;margin-right: 2.75em;font-size: 15px;margin-top: 1em;"><strong>{{ totalBags() }}</strong></span>
+      <span style="margin-left: auto;margin-right: 2.75em;font-size: 16px;margin-top: 1em;"><strong>{{ totalBags() }}</strong></span>
     </div>
     <div class="totals">
       <span>Total Weight <strong>{{ totalWeight | number:'1.0-0' }} Kg</strong></span>
     </div>
   </footer>
+  <br>
 </section>

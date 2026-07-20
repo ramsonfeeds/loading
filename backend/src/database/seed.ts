@@ -17,6 +17,8 @@ const products = [
   { weight: 28, tamilName: 'M கப்பி', englishName: 'M Kappi' },
   { weight: 20, tamilName: '20kg க பொட்டு', englishName: '20kg Kpottu' },
   { weight: 18, tamilName: '18kg க பொட்டு', englishName: '18kg Kpottu' },
+  { weight: 20, tamilName: '20 கடலை பொட்டு', englishName: '20 Kadalai Pottu' },
+  { weight: 18, tamilName: '18 கடலை பொட்டு', englishName: '18 Kadalai Pottu' },
   { weight: 49, tamilName: 'ஆலயம் அவரை', englishName: 'Aalayam Avarai' },
   { weight: 49, tamilName: 'நந்தி அவரை', englishName: 'Nandhi Avarai' },
   { weight: 49, tamilName: 'ரெட்ட கிளி அவரை', englishName: 'Red Parrot Avarai' },
@@ -84,11 +86,25 @@ const products = [
   { weight: 43, tamilName: 'பருத்தி விதை புண்ணாக்கு', englishName: 'Paruthi' }
 ];
 
+const purchasedProductNames = new Set([
+  '18kg Kpottu',
+  '20kg Kpottu',
+  '18 Kadalai Pottu',
+  '20 Kadalai Pottu',
+  'M Kappi',
+  '40Kg Vkappi',
+  'VKappi',
+  'Thavidu',
+  'Paruthi'
+]);
+
 await prisma.$connect();
 
-await prisma.product.updateMany({ data: { active: false } });
+await prisma.product.updateMany({ data: { active: false, productType: 'MANUFACTURED' } });
 
 for (const product of products) {
+  const productType = purchasedProductNames.has(product.englishName) ? 'PURCHASED' : 'MANUFACTURED';
+
   const existing = await prisma.product.findFirst({
     where: { englishName: product.englishName }
   });
@@ -99,7 +115,8 @@ for (const product of products) {
       data: {
         tamilName: product.tamilName,
         weight: product.weight,
-        active: true
+        active: true,
+        productType
       }
     });
     continue;
@@ -110,7 +127,8 @@ for (const product of products) {
       englishName: product.englishName,
       tamilName: product.tamilName,
       weight: product.weight,
-      active: true
+      active: true,
+      productType
     }
   });
 }

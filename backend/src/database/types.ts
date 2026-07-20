@@ -1,9 +1,15 @@
+export type ProductType = 'MANUFACTURED' | 'PURCHASED';
+export type Factory = 'R' | 'S';
+export type AllocationSource = 'STOCK' | 'PRODUCTION';
+export type ProductionItemSource = 'AUTO' | 'MANUAL';
+
 export interface ProductRow {
   id: number;
   englishName: string;
   tamilName: string;
   weight: number;
   active: boolean;
+  productType: ProductType;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +24,7 @@ export interface DispatchItemRow {
   createdAt: string;
   updatedAt: string;
   product: ProductRow;
+  allocations: DispatchAllocationRow[];
 }
 
 export interface DispatchGroupRow {
@@ -33,9 +40,43 @@ export interface DispatchRow {
   id: number;
   dispatchDate: string;
   title: string;
+  factory: Factory;
   createdAt: string;
   updatedAt: string;
   groups: DispatchGroupRow[];
+}
+
+export interface DispatchAllocationRow {
+  id: number;
+  itemId: number;
+  factory: Factory;
+  source: AllocationSource;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductionItemRow {
+  id: number;
+  productionListId: number;
+  productId: number;
+  quantity: number;
+  sortOrder: number;
+  sourceType: ProductionItemSource;
+  createdAt: string;
+  updatedAt: string;
+  product: ProductRow;
+}
+
+export interface ProductionListRow {
+  id: number;
+  productionDate: string;
+  title: string;
+  factory: Factory;
+  sourceDispatchId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  items: ProductionItemRow[];
 }
 
 export interface SqlProductRecord {
@@ -44,6 +85,7 @@ export interface SqlProductRecord {
   tamil_name: string;
   weight: number;
   active: number;
+  product_type: ProductType;
   created_at: string;
   updated_at: string;
 }
