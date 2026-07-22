@@ -116,7 +116,20 @@ footer span {
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    table-layout: fixed;
+  }
+
+  td:first-child {
+    width: 80%;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  td:last-child {
+    width: 20%;
+    text-align: left;
+    font-size: 18px;
+    font-weight: 700;
   }
 
   td {
@@ -126,14 +139,17 @@ footer span {
     font-weight: 700;
   }
 
-  td:last-child {
-    width: 56px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
+  // td:last-child {
+  //   width: 56px;
+  //   text-align: right;
+  //   font-variant-numeric: tabular-nums;
+  // }
 
   footer {
     margin-top: 10px;
+    width: 85%;
+    text-align: left;
+    font-size: 18px;
     font-weight: 700;
   }
 }

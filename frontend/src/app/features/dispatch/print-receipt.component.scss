@@ -68,12 +68,14 @@ small {
 .group-total {
   text-align: right;
   font-variant-numeric: tabular-nums;
+  font-size: 17px;
 }
 
 .allocation-qty {
   display: grid;
   justify-items: end;
   gap: 1px;
+  font-size: 17px;
 }
 
 .production-allocation {
