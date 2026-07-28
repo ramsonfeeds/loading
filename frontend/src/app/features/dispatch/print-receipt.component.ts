@@ -18,8 +18,13 @@ export class PrintReceiptComponent {
   @Input({ required: true }) groups: DispatchGroup[] = [];
   @Input({ required: true }) weightLines: WeightLine[] = [];
   @Input({ required: true }) totalWeight = 0;
+  @Input() copies: 1 | 2 = 2;
 
-  @ViewChildren('page') private readonly pages?: QueryList<ElementRef<HTMLElement>>;
+  get receiptCopies(): number[] {
+    return Array.from({ length: this.copies }, (_, index) => index + 1);
+  }
+
+  @ViewChildren('page') private readonly pageElements?: QueryList<ElementRef<HTMLElement>>;
 
   scale = 1;
 
@@ -62,7 +67,7 @@ export class PrintReceiptComponent {
   }
 
   prepareScale(): void {
-    const pages = this.pages?.toArray().map(page => page.nativeElement) ?? [];
+    const pages = this.pageElements?.toArray().map(page => page.nativeElement) ?? [];
     if (pages.length === 0) {
       return;
     }

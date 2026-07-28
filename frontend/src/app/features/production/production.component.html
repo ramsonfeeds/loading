@@ -61,16 +61,23 @@
         <div *ngFor="let item of items.controls; let itemIndex = index" class="item-row" [formGroupName]="itemIndex">
           <mat-form-field appearance="outline">
             <mat-label>Product</mat-label>
-            <mat-select formControlName="productId">
-              <mat-option *ngFor="let product of products" [value]="product.id">
-                {{ product.englishName }} &middot; {{ product.tamilName }}
+            <input
+              matInput
+              formControlName="productSearch"
+              [matAutocomplete]="productAuto"
+              (keydown.enter)="productEnter($event, itemIndex)"
+            >
+            <mat-autocomplete #productAuto="matAutocomplete" (optionSelected)="selectProduct($event, itemIndex)">
+              <mat-option *ngFor="let product of filteredProducts(products, item.controls.productSearch.value)" [value]="product">
+                <span class="option-name">{{ product.englishName }}</span>
+                <span>{{ product.tamilName }}</span>
               </mat-option>
-            </mat-select>
+            </mat-autocomplete>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Qty</mat-label>
-            <input matInput type="number" min="1" formControlName="quantity">
+            <input #quantityInput matInput type="number" min="1" formControlName="quantity">
           </mat-form-field>
 
           <button mat-icon-button type="button" title="Remove" (click)="removeItem(itemIndex)">
@@ -89,7 +96,7 @@
   </section>
 
   <section class="print-production" *ngIf="(lists$ | async) as lists">
-    <article *ngFor="let list of lists" class="production-sheet">
+    <article *ngFor="let list of printLists(lists)" class="production-sheet">
       <header>
         <strong>Factory {{ list.factory }} Production</strong>
         <span>{{ displayDate(list.productionDate) }}</span>

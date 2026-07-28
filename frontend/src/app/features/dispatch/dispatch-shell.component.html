@@ -1,4 +1,6 @@
 <main class="dispatch-page">
+  <app-loading-overlay *ngIf="initializing()" />
+
   <header class="toolbar no-print">
     <div>
       <h1>Dispatch</h1>
@@ -22,6 +24,7 @@
         (selected)="loadDispatch($event)"
         (duplicated)="duplicate($event)"
         (deleted)="delete($event)"
+        (initialized)="markDispatchesInitialized()"
       />
     </aside>
 
@@ -158,6 +161,7 @@
       [groups]="displayDispatchGroups(products)"
       [weightLines]="weightSummary(products).lines"
       [totalWeight]="weightSummary(products).total"
+      [copies]="printCopies()"
     />
   </section>
 </main>

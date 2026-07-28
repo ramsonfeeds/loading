@@ -22,6 +22,9 @@ import { ProductService } from '../../core/product.service';
 import { ProductionService } from '../../core/production.service';
 import { apiDateToDate, dateToApiDate, todayDate } from '../../shared/date-utils';
 import { grandTotal, groupTotal, totalWeight, weightLines } from '../../shared/dispatch-totals';
+import { filterProductsForAutocomplete } from '../../shared/product-search';
+import { LoadingOverlayComponent } from '../../shared/loading-overlay.component';
+import { PrintOptions, PrintOptionsDialogComponent } from '../../shared/print-options-dialog.component';
 import { DispatchSearchComponent } from './dispatch-search.component';
 import { PrintReceiptComponent } from './print-receipt.component';
 import { AllocationDialogComponent } from './allocation-dialog.component';
@@ -66,6 +69,7 @@ interface DispatchForm {
     MatSnackBarModule,
     NgFor,
     NgIf,
+    LoadingOverlayComponent,
     PrintReceiptComponent,
     ReactiveFormsModule,
     RouterLink
@@ -82,6 +86,8 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroy$ = new Subject<void>();
+  private productsInitialized = false;
+  private dispatchesInitialized = false;
 
   @ViewChildren('productInput') private readonly productInputs?: QueryList<ElementRef<HTMLInputElement>>;
   @ViewChildren('quantityInput') private readonly quantityInputs?: QueryList<ElementRef<HTMLInputElement>>;
@@ -89,9 +95,13 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
   @ViewChild(PrintReceiptComponent) private readonly receipt?: PrintReceiptComponent;
   @ViewChild(DispatchSearchComponent) private readonly dispatchSearch?: DispatchSearchComponent;
 
-  readonly products$ = this.productService.list('', 'true');
+  readonly products$ = this.productService.list('', 'true').pipe(
+    tap(() => this.markProductsInitialized())
+  );
   readonly selectedDispatch = signal<Dispatch | null>(null);
   private activeRow: { groupIndex: number; itemIndex: number } | null = null;
+  readonly initializing = signal(true);
+  readonly printCopies = signal<1 | 2>(2);
   readonly saving = signal(false);
   readonly lastSavedAt = signal<Date | null>(null);
   readonly dirty = signal(false);
@@ -144,13 +154,7 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
     this.productSearch$.pipe(startWith(''), debounceTime(80), distinctUntilChanged())
   ]).pipe(
     map(([products, search]) => {
-      const normalized = search.trim().toLowerCase();
-      return products.filter(product => {
-        if (!normalized) {
-          return true;
-        }
-        return product.englishName.toLowerCase().includes(normalized) || product.tamilName.toLowerCase().includes(normalized);
-      }).slice(0, 20);
+      return filterProductsForAutocomplete(products, search);
     })
   );
 
@@ -410,7 +414,13 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
             return;
         }
       }
+    const options = await this.openPrintOptions();
+    if (!options) {
+      return;
+    }
+    this.printCopies.set(options.loadingCopies);
     this.snackBar.dismiss();
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     this.receipt?.prepareScale();
     window.print();
   }
@@ -604,5 +614,31 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
 
   private reindex(): void {
     this.groups.updateValueAndValidity();
+  }
+
+  markDispatchesInitialized(): void {
+    this.dispatchesInitialized = true;
+    this.updateInitialization();
+  }
+
+  private markProductsInitialized(): void {
+    this.productsInitialized = true;
+    this.updateInitialization();
+  }
+
+  private updateInitialization(): void {
+    if (this.productsInitialized && this.dispatchesInitialized) {
+      this.initializing.set(false);
+    }
+  }
+
+  private openPrintOptions(): Promise<PrintOptions | undefined> {
+    const dialogRef = this.dialog.open(PrintOptionsDialogComponent, {
+      width: '360px',
+      autoFocus: 'dialog',
+      data: { mode: 'loading' }
+    });
+
+    return firstValueFrom(dialogRef.afterClosed());
   }
 }

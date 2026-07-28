@@ -7,7 +7,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { BehaviorSubject, combineLatest, debounceTime, startWith, switchMap } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, startWith, switchMap, tap } from 'rxjs';
 import { Dispatch } from '../../core/models';
 import { DispatchService } from '../../core/dispatch.service';
 import { dateToApiDate, formatDisplayDate, todayDate } from '../../shared/date-utils';
@@ -37,6 +37,7 @@ export class DispatchSearchComponent {
   @Output() readonly selected = new EventEmitter<Dispatch>();
   @Output() readonly duplicated = new EventEmitter<Dispatch>();
   @Output() readonly deleted = new EventEmitter<Dispatch>();
+  @Output() readonly initialized = new EventEmitter<void>();
 
   readonly form = this.fb.nonNullable.group({
     date: this.fb.control<Date | null>(todayDate())
@@ -46,8 +47,11 @@ export class DispatchSearchComponent {
     this.form.valueChanges.pipe(startWith(this.form.getRawValue()), debounceTime(200)),
     this.refresh$
   ]).pipe(
-    switchMap(([value]) => this.dispatchService.list({ date: dateToApiDate(value.date ?? null) }))
+    switchMap(([value]) => this.dispatchService.list({ date: dateToApiDate(value.date ?? null) })),
+    tap(() => this.markInitialized())
   );
+
+  private hasInitialized = false;
 
   refresh(): void {
     this.refresh$.next();
@@ -55,5 +59,14 @@ export class DispatchSearchComponent {
 
   displayDate(value: string): string {
     return formatDisplayDate(value);
+  }
+
+  private markInitialized(): void {
+    if (this.hasInitialized) {
+      return;
+    }
+
+    this.hasInitialized = true;
+    this.initialized.emit();
   }
 }
