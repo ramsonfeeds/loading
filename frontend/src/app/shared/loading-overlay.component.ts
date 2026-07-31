@@ -11,7 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     <section class="loading-overlay" role="status" aria-live="polite">
       <div class="brand-mark">
         <img
-          src="images/logo.jpg"
+          src="images/logo.png"
           alt="Ramson Feeds"
           class="logo"
         />
@@ -44,8 +44,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
       justify-content: center;
       align-items: center;
 
-      width: 110px;
-      height: 110px;
+      width: 200px;
+      height: 200px;
 
       border-radius: 12px;
       background: white;

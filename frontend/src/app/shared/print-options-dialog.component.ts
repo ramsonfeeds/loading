@@ -3,13 +3,20 @@ import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { Factory } from '../core/models';
+import { Dispatch, Factory } from '../core/models';
 
 export type PrintOptionsMode = 'loading' | 'production';
 
 export interface PrintOptions {
   loadingCopies: 1 | 2;
+  loadingDispatchCopies: Record<number, 0 | 1 | 2>;
   productionFactories: Factory[];
+}
+
+export interface PrintOptionsDialogData {
+  mode: PrintOptionsMode;
+  loadingDispatches?: Dispatch[];
+  defaultDispatchId?: number | null;
 }
 
 @Component({
@@ -21,9 +28,26 @@ export interface PrintOptions {
 
     <mat-dialog-content>
       <section *ngIf="mode === 'loading'">
-        <h3>Loading List Copies</h3>
-        <mat-checkbox [checked]="loadingCopies === 1" (change)="setLoadingCopies(1)">1 Copy</mat-checkbox>
-        <mat-checkbox [checked]="loadingCopies === 2" (change)="setLoadingCopies(2)">2 Copy</mat-checkbox>
+        <h3>Loading Lists</h3>
+        <div *ngIf="loadingDispatches.length === 0" class="empty">No dispatches found for this date.</div>
+        <div *ngFor="let dispatch of loadingDispatches" class="dispatch-option">
+          <div class="dispatch-title">
+            <strong>{{ dispatch.title || 'Untitled' }}</strong>
+            <small>Factory {{ dispatch.factory }}</small>
+          </div>
+          <div class="copy-options">
+            <mat-checkbox
+              [checked]="dispatchCopies(dispatch.id) === 1"
+              (change)="setDispatchCopies(dispatch.id, 1, $event.checked)">
+              1 Copy
+            </mat-checkbox>
+            <mat-checkbox
+              [checked]="dispatchCopies(dispatch.id) === 2"
+              (change)="setDispatchCopies(dispatch.id, 2, $event.checked)">
+              2 Copy
+            </mat-checkbox>
+          </div>
+        </div>
       </section>
 
       <section *ngIf="mode === 'production'">
@@ -39,7 +63,7 @@ export interface PrintOptions {
 
     <mat-dialog-actions align="end">
       <button mat-button type="button" mat-dialog-close>Cancel</button>
-      <button mat-flat-button color="primary" type="button" [disabled]="productionFactories.length === 0" (click)="print()">Print</button>
+      <button mat-flat-button color="primary" type="button" [disabled]="printDisabled()" (click)="print()">Print</button>
     </mat-dialog-actions>
   `,
   styles: [`
@@ -60,19 +84,60 @@ export interface PrintOptions {
       font-size: 14px;
       font-weight: 600;
     }
+
+    .empty {
+      color: #5f6670;
+      font-size: 13px;
+    }
+
+    .dispatch-option {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid #d7dbe0;
+      border-radius: 6px;
+    }
+
+    .dispatch-title {
+      display: grid;
+      gap: 2px;
+    }
+
+    small {
+      color: #5f6670;
+    }
+
+    .copy-options {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
   `]
 })
 export class PrintOptionsDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<PrintOptionsDialogComponent, PrintOptions>);
-  private readonly data = inject<{ mode: PrintOptionsMode }>(MAT_DIALOG_DATA);
+  private readonly data = inject<PrintOptionsDialogData>(MAT_DIALOG_DATA);
 
   readonly factories: Factory[] = ['R', 'S'];
   readonly mode = this.data.mode;
+  readonly loadingDispatches = this.data.loadingDispatches ?? [];
   loadingCopies: 1 | 2 = 2;
+  loadingDispatchCopies = this.createLoadingDispatchCopies();
   productionFactories: Factory[] = ['R', 'S'];
 
   setLoadingCopies(copies: 1 | 2): void {
     this.loadingCopies = copies;
+  }
+
+  dispatchCopies(dispatchId: number): 0 | 1 | 2 {
+    return this.loadingDispatchCopies[dispatchId] ?? 0;
+  }
+
+  setDispatchCopies(dispatchId: number, copies: 1 | 2, checked: boolean): void {
+    this.loadingDispatchCopies = {
+      ...this.loadingDispatchCopies,
+      [dispatchId]: checked ? copies : 0
+    };
   }
 
   toggleFactory(factory: Factory): void {
@@ -91,7 +156,27 @@ export class PrintOptionsDialogComponent {
   print(): void {
     this.dialogRef.close({
       loadingCopies: this.loadingCopies,
+      loadingDispatchCopies: this.loadingDispatchCopies,
       productionFactories: this.productionFactories
     });
+  }
+
+  printDisabled(): boolean {
+    if (this.mode === 'loading') {
+      return !Object.values(this.loadingDispatchCopies).some(copies => copies > 0);
+    }
+
+    return this.productionFactories.length === 0;
+  }
+
+  private createLoadingDispatchCopies(): Record<number, 0 | 1 | 2> {
+    const defaultDispatchId = this.data.defaultDispatchId;
+
+    return Object.fromEntries(
+      this.loadingDispatches.map(dispatch => [
+        dispatch.id,
+        dispatch.id === defaultDispatchId ? 2 : 0
+      ])
+    );
   }
 }

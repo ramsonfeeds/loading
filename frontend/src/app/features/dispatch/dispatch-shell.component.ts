@@ -26,7 +26,7 @@ import { filterProductsForAutocomplete } from '../../shared/product-search';
 import { LoadingOverlayComponent } from '../../shared/loading-overlay.component';
 import { PrintOptions, PrintOptionsDialogComponent } from '../../shared/print-options-dialog.component';
 import { DispatchSearchComponent } from './dispatch-search.component';
-import { PrintReceiptComponent } from './print-receipt.component';
+import { PrintableDispatchReceipt, PrintReceiptComponent } from './print-receipt.component';
 import { AllocationDialogComponent } from './allocation-dialog.component';
 
 interface ItemForm {
@@ -102,6 +102,7 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
   private activeRow: { groupIndex: number; itemIndex: number } | null = null;
   readonly initializing = signal(true);
   readonly printCopies = signal<1 | 2>(2);
+  readonly selectedPrintReceipts = signal<PrintableDispatchReceipt[] | null>(null);
   readonly saving = signal(false);
   readonly lastSavedAt = signal<Date | null>(null);
   readonly dirty = signal(false);
@@ -414,15 +415,29 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
             return;
         }
       }
-    const options = await this.openPrintOptions();
+    const productionDate = dateToApiDate(this.form.controls.dispatchDate.value);
+    const [products, dispatches] = await Promise.all([
+      firstValueFrom(this.products$),
+      firstValueFrom(this.dispatchService.list({ date: productionDate }))
+    ]);
+    const printChoices = dispatches.length > 0
+      ? dispatches
+      : [this.currentPrintableDispatch(products)];
+    const options = await this.openPrintOptions(printChoices);
     if (!options) {
       return;
     }
-    this.printCopies.set(options.loadingCopies);
+    const receipts = this.createPrintReceipts(printChoices, options.loadingDispatchCopies, products);
+    if (receipts.length === 0) {
+      return;
+    }
+    this.selectedPrintReceipts.set(receipts);
     this.snackBar.dismiss();
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     this.receipt?.prepareScale();
+    window.addEventListener('afterprint', () => this.selectedPrintReceipts.set(null), { once: true });
     window.print();
+    window.setTimeout(() => this.selectedPrintReceipts.set(null), 1000);
   }
 
   async generateProduction(): Promise<void> {
@@ -632,13 +647,55 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
     }
   }
 
-  private openPrintOptions(): Promise<PrintOptions | undefined> {
+  private openPrintOptions(dispatches: Dispatch[]): Promise<PrintOptions | undefined> {
     const dialogRef = this.dialog.open(PrintOptionsDialogComponent, {
-      width: '360px',
+      width: '520px',
       autoFocus: 'dialog',
-      data: { mode: 'loading' }
+      data: {
+        mode: 'loading',
+        loadingDispatches: dispatches,
+        defaultDispatchId: this.selectedDispatch()?.id ?? dispatches[0]?.id ?? null
+      }
     });
 
     return firstValueFrom(dialogRef.afterClosed());
+  }
+
+  private createPrintReceipts(
+    dispatches: readonly Dispatch[],
+    copiesByDispatchId: Record<number, 0 | 1 | 2>,
+    products: readonly Product[]
+  ): PrintableDispatchReceipt[] {
+    return dispatches
+      .map((dispatch): PrintableDispatchReceipt | null => {
+        const copies = copiesByDispatchId[dispatch.id] ?? 0;
+        if (copies === 0) {
+          return null;
+        }
+
+        const lines = weightLines(dispatch.groups, products);
+        return {
+          date: dispatch.dispatchDate,
+          title: dispatch.title,
+          factory: dispatch.factory,
+          groups: dispatch.groups,
+          weightLines: lines,
+          totalWeight: totalWeight(lines),
+          copies
+        };
+      })
+      .filter((receipt): receipt is PrintableDispatchReceipt => receipt !== null);
+  }
+
+  private currentPrintableDispatch(products: readonly Product[]): Dispatch {
+    return {
+      id: 0,
+      dispatchDate: dateToApiDate(this.form.controls.dispatchDate.value),
+      title: this.form.controls.title.value,
+      factory: this.form.controls.factory.value,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      groups: this.displayDispatchGroups(products)
+    };
   }
 }

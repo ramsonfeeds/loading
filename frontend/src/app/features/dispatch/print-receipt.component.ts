@@ -4,6 +4,16 @@ import { AllocationSource, DispatchGroup, DispatchItem, Factory, WeightLine } fr
 import { formatDisplayDate } from '../../shared/date-utils';
 import { grandTotal, groupTotal } from '../../shared/dispatch-totals';
 
+export interface PrintableDispatchReceipt {
+  date: Date | string | null;
+  title: string;
+  factory: Factory;
+  groups: DispatchGroup[];
+  weightLines: WeightLine[];
+  totalWeight: number;
+  copies: 1 | 2;
+}
+
 @Component({
   selector: 'app-print-receipt',
   standalone: true,
@@ -19,21 +29,24 @@ export class PrintReceiptComponent {
   @Input({ required: true }) weightLines: WeightLine[] = [];
   @Input({ required: true }) totalWeight = 0;
   @Input() copies: 1 | 2 = 2;
+  @Input() receipts: PrintableDispatchReceipt[] | null = null;
 
-  get receiptCopies(): number[] {
-    return Array.from({ length: this.copies }, (_, index) => index + 1);
+  get receiptPages(): PrintableDispatchReceipt[] {
+    return this.printableReceipts.flatMap(receipt =>
+      Array.from({ length: receipt.copies }, () => receipt)
+    );
   }
 
   @ViewChildren('page') private readonly pageElements?: QueryList<ElementRef<HTMLElement>>;
 
   scale = 1;
 
-  totalBags(): number {
-    return grandTotal(this.groups);
+  totalBags(groups: DispatchGroup[]): number {
+    return grandTotal(groups);
   }
 
-  displayDate(): string {
-    return formatDisplayDate(this.date);
+  displayDate(date: Date | string | null): string {
+    return formatDisplayDate(date);
   }
 
   groupTotal(group: DispatchGroup): number {
@@ -77,5 +90,21 @@ export class PrintReceiptComponent {
     const renderedHeight = Math.max(...pages.map(page => page.scrollHeight));
     this.scale = Math.min(1, printableHeightPx / renderedHeight);
     pages.forEach(page => page.style.setProperty('--print-scale', `${this.scale}`));
+  }
+
+  private get printableReceipts(): PrintableDispatchReceipt[] {
+    if (this.receipts !== null) {
+      return this.receipts;
+    }
+
+    return [{
+      date: this.date,
+      title: this.title,
+      factory: this.factory,
+      groups: this.groups,
+      weightLines: this.weightLines,
+      totalWeight: this.totalWeight,
+      copies: this.copies
+    }];
   }
 }
