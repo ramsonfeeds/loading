@@ -1,4 +1,5 @@
 <main class="production-page">
+  <mat-progress-bar *ngIf="saving()" mode="indeterminate" class="no-print" />
   <header class="toolbar no-print">
     <div>
       <h1>Production</h1>
@@ -90,7 +91,7 @@
         <button mat-button type="button" (click)="addItem()"><mat-icon>add</mat-icon>Item</button>
         <span></span>
         <button mat-button type="button" (click)="cancel()">New Manual</button>
-        <button mat-flat-button color="primary" type="submit"><mat-icon>save</mat-icon>{{ editing() ? 'Update' : 'Save' }}</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving()"><mat-icon>save</mat-icon>{{ editing() ? 'Update' : 'Save' }}</button>
       </footer>
     </form>
   </section>

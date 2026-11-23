@@ -44,7 +44,7 @@ export class DispatchSearchComponent {
   });
 
   readonly dispatches$ = combineLatest([
-    this.form.valueChanges.pipe(startWith(this.form.getRawValue()), debounceTime(200)),
+    this.form.valueChanges.pipe(debounceTime(200), startWith(this.form.getRawValue())),
     this.refresh$
   ]).pipe(
     switchMap(([value]) => this.dispatchService.list({ date: dateToApiDate(value.date ?? null) })),

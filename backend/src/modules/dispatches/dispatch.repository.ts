@@ -79,106 +79,36 @@ export class DispatchRepository {
   }
 
   async create(data: DispatchSaveInput): Promise<DispatchRow> {
-    const dispatchId = await prisma.$transaction(
-      async transaction => {
-        const dispatch = await transaction.dispatch.create({
-          data: {
-            dispatchDate: data.dispatchDate,
-            title: data.title,
-            factory: data.factory
-          }
-        });
-
-        await this.insertGroups(transaction, dispatch.id, data.groups);
-
-        return dispatch.id;
+    const persistedDispatch = await prisma.dispatch.create({
+      data: {
+        dispatchDate: data.dispatchDate,
+        title: data.title,
+        factory: data.factory,
+        groups: { create: this.groupWrites(data.groups) }
       },
-      {
-        timeout: 30000
-      }
-    );
-
-    const persistedDispatch = await prisma.dispatch.findUniqueOrThrow({
-      where: { id: dispatchId },
-      include: {
-        groups: {
-          orderBy: { sortOrder: 'asc' },
-          include: {
-            items: {
-              orderBy: { sortOrder: 'asc' },
-              include: {
-                product: true,
-                allocations: {
-                  orderBy: [
-                    { source: 'asc' },
-                    { factory: 'asc' }
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
+      include: this.dispatchInclude
     });
 
     return mapDispatch(persistedDispatch);
   }
 
   async update(id: number, data: DispatchSaveInput): Promise<DispatchRow> {
-    await prisma.$transaction(
-      async transaction => {
-        await transaction.dispatch.update({
-          where: { id },
-          data: {
-            dispatchDate: data.dispatchDate,
-            title: data.title,
-            factory: data.factory
-          }
-        });
-
-        await transaction.dispatchItem.deleteMany({
-          where: {
-            group: {
-              dispatchId: id
-            }
-          }
-        });
-
-        await transaction.dispatchGroup.deleteMany({
-          where: {
-            dispatchId: id
-          }
-        });
-
-        await this.insertGroups(transaction, id, data.groups);
-      },
-      {
-        timeout: 30000
-      }
-    );
-
-    const persistedDispatch = await prisma.dispatch.findUniqueOrThrow({
-      where: { id },
-      include: {
-        groups: {
-          orderBy: { sortOrder: 'asc' },
-          include: {
-            items: {
-              orderBy: { sortOrder: 'asc' },
-              include: {
-                product: true,
-                allocations: {
-                  orderBy: [
-                    { source: 'asc' },
-                    { factory: 'asc' }
-                  ]
-                }
-              }
-            }
-          }
+    const [, persistedDispatch] = await prisma.$transaction([
+      prisma.dispatch.update({
+        where: { id },
+        data: {
+          dispatchDate: data.dispatchDate,
+          title: data.title,
+          factory: data.factory,
+          groups: { deleteMany: {} }
         }
-      }
-    });
+      }),
+      prisma.dispatch.update({
+        where: { id },
+        data: { groups: { create: this.groupWrites(data.groups) } },
+        include: this.dispatchInclude
+      })
+    ]);
 
     return mapDispatch(persistedDispatch);
   }
@@ -187,41 +117,39 @@ export class DispatchRepository {
     await prisma.dispatch.delete({ where: { id } });
   }
 
-  private async insertGroups(
-    transaction: Prisma.TransactionClient,
-    dispatchId: number,
-    groups: DispatchSaveInput['groups']
-  ): Promise<void> {
-    for (const group of groups) {
-      const createdGroup = await transaction.dispatchGroup.create({
-        data: {
-          dispatchId,
-          sortOrder: group.sortOrder
-        }
-      });
-
-      for (const item of group.items) {
-        const createdItem = await transaction.dispatchItem.create({
-          data: {
-            groupId: createdGroup.id,
-            productId: item.productId,
-            quantity: item.quantity,
-            description: item.description ?? null,
-            sortOrder: item.sortOrder
+  private readonly dispatchInclude = {
+    groups: {
+      orderBy: { sortOrder: 'asc' },
+      include: {
+        items: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            product: true,
+            allocations: { orderBy: [{ source: 'asc' }, { factory: 'asc' }] }
           }
-        });
+        }
+      }
+    }
+  } satisfies Prisma.DispatchInclude;
 
-        if (item.allocations.length > 0) {
-          await transaction.dispatchAllocation.createMany({
-            data: item.allocations.map(allocation => ({
-              itemId: createdItem.id,
+  private groupWrites(groups: DispatchSaveInput['groups']): Prisma.DispatchGroupCreateWithoutDispatchInput[] {
+    return groups.map(group => ({
+      sortOrder: group.sortOrder,
+      items: {
+        create: group.items.map(item => ({
+          product: { connect: { id: item.productId } },
+          quantity: item.quantity,
+          description: item.description ?? null,
+          sortOrder: item.sortOrder,
+          allocations: {
+            create: item.allocations.map(allocation => ({
               factory: allocation.factory,
               source: allocation.source,
               quantity: allocation.quantity
             }))
-          });
-        }
+          }
+        }))
       }
-    }
+    }));
   }
 }

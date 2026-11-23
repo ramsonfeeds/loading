@@ -11,12 +11,12 @@
       <a mat-button routerLink="/production"><mat-icon>precision_manufacturing</mat-icon>Production</a>
       <button mat-button type="button" (click)="newDispatch()"><mat-icon>add</mat-icon>New</button>
       <button mat-flat-button color="primary" type="button" (click)="saveNow()" [disabled]="saving()"><mat-icon>save</mat-icon>Save</button>
-      <button mat-flat-button type="button" (click)="generateProduction()" [disabled]="saving()"><mat-icon>factory</mat-icon>Generate Production</button>
+      <button mat-flat-button type="button" (click)="generateProduction()" [disabled]="saving() || generatingProduction()"><mat-icon>factory</mat-icon>Generate Production</button>
       <button mat-flat-button type="button" (click)="print()" [disabled]="saving()"><mat-icon>print</mat-icon>Print</button>
     </nav>
   </header>
 
-  <mat-progress-bar *ngIf="saving()" mode="indeterminate" class="no-print" />
+  <mat-progress-bar *ngIf="saving() || generatingProduction()" mode="indeterminate" class="no-print" />
 
   <section class="workspace">
     <aside class="no-print">

@@ -1,4 +1,4 @@
-import { AsyncPipe, NgFor } from '@angular/common';
+import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,16 +6,17 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
-import { debounceTime, startWith, switchMap } from 'rxjs';
+import { debounceTime, finalize, startWith, switchMap } from 'rxjs';
 import { Product, ProductPayload, ProductType } from '../../core/models';
 import { ProductService } from '../../core/product.service';
 
 @Component({
   selector: 'app-product-master',
   standalone: true,
-  imports: [AsyncPipe, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSelectModule, NgFor, ReactiveFormsModule, RouterLink],
+  imports: [AsyncPipe, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressBarModule, MatSelectModule, NgFor, NgIf, ReactiveFormsModule, RouterLink],
   templateUrl: './product-master.component.html',
   styleUrl: './product-master.component.scss'
 })
@@ -24,6 +25,7 @@ export class ProductMasterComponent {
   private readonly productService = inject(ProductService);
 
   readonly editing = signal<Product | null>(null);
+  readonly saving = signal(false);
   readonly search = this.fb.nonNullable.control('');
   readonly form = this.fb.nonNullable.group({
     englishName: ['', Validators.required],
@@ -51,13 +53,14 @@ export class ProductMasterComponent {
   }
 
   save(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || this.saving()) {
       return;
     }
     const payload: ProductPayload = this.form.getRawValue();
     const editing = this.editing();
     const request = editing ? this.productService.update(editing.id, payload) : this.productService.create(payload);
-    request.subscribe(() => {
+    this.saving.set(true);
+    request.pipe(finalize(() => this.saving.set(false))).subscribe(() => {
       this.cancel();
     });
   }

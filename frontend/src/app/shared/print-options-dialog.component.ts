@@ -11,6 +11,7 @@ export interface PrintOptions {
   loadingCopies: 1 | 2;
   loadingDispatchCopies: Record<number, 0 | 1 | 2>;
   productionFactories: Factory[];
+  productionFactoryCopies: Record<Factory, 0 | 1 | 2>;
 }
 
 export interface PrintOptionsDialogData {
@@ -52,12 +53,15 @@ export interface PrintOptionsDialogData {
 
       <section *ngIf="mode === 'production'">
         <h3>Production Lists</h3>
-        <mat-checkbox
-          *ngFor="let factory of factories"
-          [checked]="productionFactories.includes(factory)"
-          (change)="toggleFactory(factory)">
-          Factory {{ factory }}
-        </mat-checkbox>
+        <div *ngFor="let factory of factories" class="dispatch-option">
+          <strong>Factory {{ factory }}</strong>
+          <div class="copy-options">
+            <mat-checkbox [checked]="productionFactoryCopies[factory] === 1"
+              (change)="setProductionCopies(factory, 1, $event.checked)">1 Copy</mat-checkbox>
+            <mat-checkbox [checked]="productionFactoryCopies[factory] === 2"
+              (change)="setProductionCopies(factory, 2, $event.checked)">2 Copy</mat-checkbox>
+          </div>
+        </div>
       </section>
     </mat-dialog-content>
 
@@ -123,7 +127,7 @@ export class PrintOptionsDialogComponent {
   readonly loadingDispatches = this.data.loadingDispatches ?? [];
   loadingCopies: 1 | 2 = 2;
   loadingDispatchCopies = this.createLoadingDispatchCopies();
-  productionFactories: Factory[] = ['R', 'S'];
+  productionFactoryCopies: Record<Factory, 0 | 1 | 2> = { R: 1, S: 1 };
 
   setLoadingCopies(copies: 1 | 2): void {
     this.loadingCopies = copies;
@@ -140,24 +144,19 @@ export class PrintOptionsDialogComponent {
     };
   }
 
-  toggleFactory(factory: Factory): void {
-    if (this.productionFactories.includes(factory)) {
-      if (this.productionFactories.length === 1) {
-        return;
-      }
-
-      this.productionFactories = this.productionFactories.filter(item => item !== factory);
-      return;
-    }
-
-    this.productionFactories = [...this.productionFactories, factory].sort();
+  setProductionCopies(factory: Factory, copies: 1 | 2, checked: boolean): void {
+    this.productionFactoryCopies = {
+      ...this.productionFactoryCopies,
+      [factory]: checked ? copies : 0
+    };
   }
 
   print(): void {
     this.dialogRef.close({
       loadingCopies: this.loadingCopies,
       loadingDispatchCopies: this.loadingDispatchCopies,
-      productionFactories: this.productionFactories
+      productionFactories: this.factories.filter(factory => this.productionFactoryCopies[factory] > 0),
+      productionFactoryCopies: this.productionFactoryCopies
     });
   }
 
@@ -166,7 +165,7 @@ export class PrintOptionsDialogComponent {
       return !Object.values(this.loadingDispatchCopies).some(copies => copies > 0);
     }
 
-    return this.productionFactories.length === 0;
+    return !this.factories.some(factory => this.productionFactoryCopies[factory] > 0);
   }
 
   private createLoadingDispatchCopies(): Record<number, 0 | 1 | 2> {

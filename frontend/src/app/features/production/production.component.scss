@@ -105,7 +105,6 @@ footer span {
 
 .production-sheet {
   width: 10.5cm;
-  min-height: 10cm;
   padding: 0.4cm;
   background: #fff;
   color: #000;
@@ -187,6 +186,6 @@ footer span {
   }
 
   .production-sheet + .production-sheet {
-    margin-top: 1cm;
+    margin-top: 0;
   }
 }

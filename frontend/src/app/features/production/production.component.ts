@@ -9,10 +9,11 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
-import { BehaviorSubject, combineLatest, firstValueFrom, startWith, switchMap } from 'rxjs';
+import { BehaviorSubject, combineLatest, finalize, firstValueFrom, startWith, switchMap } from 'rxjs';
 import { Factory, Product, ProductionItemSource, ProductionList, ProductionListPayload } from '../../core/models';
 import { ProductService } from '../../core/product.service';
 import { ProductionService } from '../../core/production.service';
@@ -47,6 +48,7 @@ interface ProductionForm {
     MatIconModule,
     MatInputModule,
     MatNativeDateModule,
+    MatProgressBarModule,
     MatSelectModule,
     MatSnackBarModule,
     NgFor,
@@ -71,7 +73,8 @@ export class ProductionComponent {
   readonly products$ = this.productService.list('', 'true');
   readonly selectedDate = this.fb.control(todayDate());
   readonly editing = signal<ProductionList | null>(null);
-  readonly printFactories = signal<Factory[]>(['R', 'S']);
+  readonly saving = signal(false);
+  readonly printFactoryCopies = signal<Record<Factory, 0 | 1 | 2>>({ R: 1, S: 1 });
 
   readonly form = this.fb.nonNullable.group<ProductionForm>({
     productionDate: this.fb.control(todayDate(), Validators.required),
@@ -132,13 +135,16 @@ export class ProductionComponent {
   }
 
   save(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || this.saving()) {
       return;
     }
 
     const payload = this.payload();
     const editing = this.editing();
-    this.productionService.save(payload, editing?.id).subscribe(() => {
+    this.saving.set(true);
+    this.productionService.save(payload, editing?.id).pipe(
+      finalize(() => this.saving.set(false))
+    ).subscribe(() => {
       this.snackBar.open('Production saved', 'OK', { duration: 1600 });
       this.cancel();
       this.refresh$.next();
@@ -168,7 +174,7 @@ export class ProductionComponent {
       return;
     }
 
-    this.printFactories.set(options.productionFactories);
+    this.printFactoryCopies.set(options.productionFactoryCopies);
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     window.print();
   }
@@ -205,8 +211,8 @@ export class ProductionComponent {
   }
 
   printLists(lists: readonly ProductionList[]): ProductionList[] {
-    const factories = this.printFactories();
-    return lists.filter(list => factories.includes(list.factory));
+    const copies = this.printFactoryCopies();
+    return lists.flatMap(list => Array.from({ length: copies[list.factory] }, () => list));
   }
 
   private payload(): ProductionListPayload {

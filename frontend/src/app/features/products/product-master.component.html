@@ -6,6 +6,7 @@
     </div>
     <a mat-flat-button routerLink="/"><mat-icon>assignment</mat-icon>Dispatch</a>
   </header>
+  <mat-progress-bar *ngIf="saving()" mode="indeterminate" />
 
   <section class="content">
     <form [formGroup]="form" class="editor" (ngSubmit)="save()">
@@ -30,7 +31,7 @@
       </mat-form-field>
       <mat-checkbox formControlName="active">Active</mat-checkbox>
       <div class="actions">
-        <button mat-flat-button color="primary" type="submit"><mat-icon>save</mat-icon>{{ editing() ? 'Update' : 'Add' }}</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving()"><mat-icon>save</mat-icon>{{ editing() ? 'Update' : 'Add' }}</button>
         <button mat-button type="button" (click)="cancel()">Cancel</button>
       </div>
     </form>

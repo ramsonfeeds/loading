@@ -104,9 +104,13 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
   readonly printCopies = signal<1 | 2>(2);
   readonly selectedPrintReceipts = signal<PrintableDispatchReceipt[] | null>(null);
   readonly saving = signal(false);
+  readonly generatingProduction = signal(false);
   readonly lastSavedAt = signal<Date | null>(null);
   readonly dirty = signal(false);
   readonly statusText = computed(() => {
+    if (this.generatingProduction()) {
+      return 'Generating production...';
+    }
     if (this.saving()) {
         return 'Saving...';
     }
@@ -441,7 +445,7 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
   }
 
   async generateProduction(): Promise<void> {
-    if (this.saving()) {
+    if (this.saving() || this.generatingProduction()) {
       return;
     }
     if (this.dirty()) {
@@ -457,7 +461,10 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.productionService.generate(productionDate).subscribe(lists => {
+    this.generatingProduction.set(true);
+    this.productionService.generate(productionDate).pipe(
+      finalize(() => this.generatingProduction.set(false))
+    ).subscribe(lists => {
       this.snackBar.open(`Generated ${lists.length} production list${lists.length === 1 ? '' : 's'}`, 'OK', { duration: 2200 });
     });
   }
@@ -642,7 +649,7 @@ export class DispatchShellComponent implements OnInit, OnDestroy {
   }
 
   private updateInitialization(): void {
-    if (this.productsInitialized && this.dispatchesInitialized) {
+    if (this.productsInitialized) {
       this.initializing.set(false);
     }
   }
